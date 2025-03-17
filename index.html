@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Orbit Dash</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            user-select: none;
+        }
+        
+        body {
+            background-color: #0a0a1a;
+            color: #ffffff;
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .ui-panel {
+            position: absolute;
+            background-color: rgba(20, 20, 40, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 10;
+        }
+        
+        #score-panel {
+            top: 10px;
+            left: 10px;
+        }
+        
+        #lives-panel {
+            top: 10px;
+            right: 10px;
+        }
+        
+        #coins-panel {
+            top: 50px;
+            left: 10px;
+        }
+        
+        #instructions-panel {
+            bottom: 10px;
+            left: 10px;
+            max-width: 200px;
+            font-size: 14px;
+        }
+        
+        #orbit-status {
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        #level-up {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #ffdd44;
+            display: none;
+            text-align: center;
+            z-index: 20;
+        }
+        
+        .game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(10, 10, 26, 0.9);
+            z-index: 100;
+        }
+        
+        h1 {
+            font-size: 40px;
+            margin-bottom: 20px;
+            color: #4444ff;
+        }
+        
+        p {
+            margin-bottom: 20px;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        button {
+            background-color: #4444ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #5555ff;
+        }
+        
+        #leaderboard-panel, #shop-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 200;
+            display: none;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+        
+        .panel-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .shop-item {
+            background-color: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .item-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .shop-category {
+            margin-top: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        
+        #game-controls {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(20, 20, 40, 0.7);
+            border-radius: 50%;
+            margin: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        #stop-button {
+            background-color: rgba(255, 220, 0, 0.3);
+        }
+        
+        #boost-button {
+            background-color: rgba(255, 100, 0, 0.3);
+        }
+        
+        #name-input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 200px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        th {
+            background-color: rgba(10, 10, 26, 0.9);
+        }
+        
+        /* Estilos para efeitos visuais da órbita */
+        .orbit-effect-preview {
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            margin-right: 10px;
+            background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.5));
+        }
+        
+        /* Dicas de UI */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+            cursor: help;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: rgba(40, 40, 60, 0.9);
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Estilo para mensagens do sistema */
+        .system-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background-color: rgba(50, 50, 80, 0.7);
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="score-panel" class="ui-panel">Pontos: <span id="score-value">0</span></div>
+        <div id="coins-panel" class="ui-panel">Moedas: <span id="coins-value">0</span></div>
+        <div id="lives-panel" class="ui-panel">Vidas: <span id="lives-value">❤️❤️❤️</span></div>
+        <div id="orbit-status" class="ui-panel">Controles: ⏱️ para parar, ⚡ para acelerar</div>
+        <div id="instructions-panel" class="ui-panel">Use os botões ⏱️ e ⚡ para controlar sua órbita. Desvie dos asteroides!</div>
+        
+        <div id="level-up">NÍVEL SUBIU!</div>
+        
+        <div id="game-controls">
+            <div id="stop-button" class="control-button">⏱️</div>
+            <div id="boost-button" class="control-button">⚡</div>
+        </div>
+        
+        <div id="start-screen" class="game-screen">
+            <h1>ORBIT DASH</h1>
+            <p>Sobreviva na órbita e colete moedas para desbloquear personalização!</p>
+            <button id="start-button">INICIAR JOGO</button>
+            <button id="shop-button">LOJA</button>
+            <button id="leaderboard-button">CLASSIFICAÇÃO</button>
+        </div>
+        
+        <div id="game-over-screen" class="game-screen" style="display: none;">
+            <h1>FIM DE JOGO</h1>
+            <p id="final-score">Pontuação: 0</p>
+            <p id="final-coins">Moedas: 0</p>
+            <input type="text" id="name-input" placeholder="Seu nome para o ranking" maxlength="15">
+            <div>
+                <button id="submit-score-button">ENVIAR PONTUAÇÃO</button>
+                <button id="restart-button">JOGAR NOVAMENTE</button>
+            </div>
+            <div>
+                <button id="shop-button-end">LOJA</button>
+                <button id="leaderboard-button-end">CLASSIFICAÇÃO</button>
+            </div>
+        </div>
+        
+        <div id="leaderboard-panel">
+            <h2>Classificação</h2>
+            <button class="panel-close">&times;</button>
+            <div class="system-message">
+                Melhores pontuações desta sessão de jogo.
+            </div>
+            <table id="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>Pontos</th>
+                        <th>Moedas</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-list"></tbody>
+            </table>
+        </div>
+        
+        <div id="shop-panel">
+            <h2>Loja</h2>
+            <button class="panel-close">&times;</button>
+            <p>Moedas disponíveis: <span id="shop-coins">0</span></p>
+            <div id="shop-items"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configurações e variáveis do jogo
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Redimensionar o canvas para preencher a tela
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        // Estado do jogo
+        const gameState = {
+            score: 0,
+            coins: 0,
+            lives: 3,
+            level: 1,
+            orbitRadius: 120,
+            orbitAngle: 0,
+            orbitSpeed: 0.03,
+            orbitDirection: 1, // 1 = horário, -1 = anti-horário
+            isOrbitalStopped: false,
+            orbitSpeedBoost: 1,
+            orbitBoostTime: 0,
+            orbitBoostDuration: 3000,
+            lastObstacleSpawn: 0,
+            lastPowerUpSpawn: 0,
+            lastCoinSpawn: 0,
+            obstacleSpawnRate: 2000,
+            powerUpSpawnRate: 8000,
+            coinSpawnRate: 3000,
+            selectedSkin: 'default',
+            selectedOrbitEffect: 'default',
+            totalCoinsCollected: 0,
+            bestScore: 0,
+            mouseControl: false, // Controle por mouse está desativado por padrão
+            targetAngle: 0, // Ângulo alvo para o controle por mouse
+            
+            // Valores para esta sessão
+            ownedSkins: ['default'],
+            ownedOrbitEffects: ['default'],
+            ownedPowerups: [],
+            ownedUpgrades: [],
+            
+            // Bonus ativos
+            startingLives: 3,
+            coinMultiplier: 1,
+            obstacleSlowdown: 1,
+            scoreMultiplier: 1
+        };
+        
+        // Upgrades disponíveis
+        const gameUpgrades = [
+            { id: 'mouse_control', name: 'Controle por Mouse', desc: 'Permite controlar a nave com o cursor do mouse.', price: 150, owned: false },
+            { id: 'reverse_orbit', name: 'Órbita Reversa', desc: 'Permite inverter a direção da órbita.', price: 100, owned: false },
+            { id: 'shield_pulse', name: 'Pulso de Escudo', desc: 'Permite ativar um escudo temporário a cada 30 segundos.', price: 250, owned: false },
+            { id: 'magnet', name: 'Ímã de Moedas', desc: 'Atrai moedas próximas automaticamente.', price: 300, owned: false }
+        ];
+        
+        // Efeitos de órbita disponíveis
+        const orbitEffects = [
+            { id: 'default', name: 'Padrão', desc: 'Órbita normal.', color: '#ffffff', price: 0, owned: true },
+            { id: 'neon', name: 'Neon', desc: 'Órbita com brilho neon intenso.', color: '#00ffff', price: 150, owned: false },
+            { id: 'rainbow', name: 'Arco-íris', desc: 'Órbita com cores do arco-íris.', color: 'rainbow', price: 200, owned: false },
+            { id: 'fire', name: 'Fogo', desc: 'Órbita com efeito de chamas.', color: '#ff4400', price: 250, owned: false },
+            { id: 'electric', name: 'Elétrica', desc: 'Órbita com efeito de eletricidade.', color: '#44aaff', price: 300, owned: false }
+        ];
+        
+        // Powerups permanentes
+        const permanentPowerups = [
+            { id: 'extra_life', name: 'Vida Extra', desc: 'Comece cada jogo com uma vida adicional.', price: 400, owned: false, maxLevel: 2, level: 0 },
+            { id: 'coin_magnet', name: 'Imã de Moedas', desc: 'Aumenta o raio de coleta de moedas em 20%.', price: 300, owned: false, maxLevel: 3, level: 0 },
+            { id: 'score_boost', name: 'Multiplicador de Pontos', desc: 'Aumenta os pontos ganhos em 10%.', price: 350, owned: false, maxLevel: 5, level: 0 },
+            { id: 'slow_obstacles', name: 'Desacelerador', desc: 'Reduz a velocidade dos obstáculos em 5%.', price: 250, owned: false, maxLevel: 4, level: 0 },
+            { id: 'coin_value', name: 'Valor de Moedas', desc: 'Aumenta o valor das moedas coletadas em 15%.', price: 275, owned: false, maxLevel: 3, level: 0 }
+        ];
+        
+        // Skins disponíveis para compra
+        const playerSkins = [
+            { id: 'default', name: 'Padrão', color: '#4444ff', price: 0, owned: true },
+            { id: 'fire', name: 'Fogo', color: '#ff4422', price: 100, owned: false },
+            { id: 'ice', name: 'Gelo', color: '#22ccff', price: 150, owned: false },
+            { id: 'toxic', name: 'Tóxico', color: '#22ff66', price: 200, owned: false },
+            { id: 'gold', name: 'Ouro', color: '#ffcc22', price: 300, owned: false },
+            { id: 'dark', name: 'Sombrio', color: '#662288', price: 200, owned: false },
+            { id: 'ruby', name: 'Rubi', color: '#cc2233', price: 250, owned: false },
+            { id: 'emerald', name: 'Esmeralda', color: '#22aa44', price: 250, owned: false }
+        ];
+        
+        // Entidades do jogo
+        let player = null;
+        let entities = [];
+        
+        // Centro da tela
+        let center = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2
+        };
+        
+        // Verificar se o jogo está ativo
+        let gameActive = false;
+        
+        // Leaderboard para esta sessão
+        let leaderboard = [];
+        
+        // Momento do último pulso de escudo
+        let lastShieldPulse = 0;
+        const shieldPulseCooldown = 30000; // 30 segundos
+        
+        // Classe do jogador
+        function Player() {
+            this.x = 0;
+            this.y = 0;
+            this.radius = 10;
+            this.color = getPlayerColor();
+            this.trailPositions = [];
+            this.maxTrailLength = 20;
+            this.isInvulnerable = false;
+            this.invulnerableTime = 0;
+            this.invulnerableDuration = 2000;
+            
+            this.update = function(deltaTime) {
+                // Adicionar posição ao rastro
+                this.trailPositions.unshift({x: this.x, y: this.y});
+                
+                // Limitar tamanho do rastro
+                if (this.trailPositions.length > this.maxTrailLength) {
+                    this.trailPositions.pop();
+                }
+                
+                // Atualizar invulnerabilidade
+                if (this.isInvulnerable) {
+                    this.invulnerableTime += deltaTime;
+                    if (this.invulnerableTime >= this.invulnerableDuration) {
+                        this.isInvulnerable = false;
+                        this.invulnerableTime = 0;
+                    }
+                }
+                
+                // Verificar se o ímã de moedas está ativo
+                if (gameUpgrades.find(upgrade => upgrade.id === 'magnet').owned) {
+                    this.attractCoins();
+                }
+            };
+            
+            this.render = function() {
+                // Desenhar rastro
+                for (let i = 0; i < this.trailPositions.length; i++) {
+                    const alpha = 1 - i / this.maxTrailLength;
+                    ctx.fillStyle = hexToRgba(this.color, alpha * 0.5);
+                    const size = this.radius * (1 - i / this.maxTrailLength);
+                    ctx.beginPath();
+                    ctx.arc(this.trailPositions[i].x, this.trailPositions[i].y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Desenhar jogador
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Efeito de brilho
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // Efeito de invulnerabilidade
+                if (this.isInvulnerable) {
+                    const pulseRate = Math.sin(Date.now() / 100) * 0.5 + 0.5;
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${pulseRate})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                
+                // Efeito de boost
+                if (gameState.orbitSpeedBoost > 1) {
+                    ctx.fillStyle = 'rgba(255, 87, 34, 0.7)';
+                    ctx.beginPath();
+                    
+                    const angle = gameState.orbitAngle + Math.PI;
+                    const flameLength = this.radius * 2 * gameState.orbitSpeedBoost;
+                    
+                    ctx.moveTo(
+                        this.x + Math.cos(angle) * this.radius,
+                        this.y + Math.sin(angle) * this.radius
+                    );
+                    
+                    ctx.lineTo(
+                        this.x + Math.cos(angle + 0.3) * this.radius * 0.8,
+                        this.y + Math.sin(angle + 0.3) * this.radius * 0.8
+                    );
+                    
+                    ctx.lineTo(
+                        this.x + Math.cos(angle) * flameLength,
+                        this.y + Math.sin(angle) * flameLength
+                    );
+                    
+                    ctx.lineTo(
+                        this.x + Math.cos(angle - 0.3) * this.radius * 0.8,
+                        this.y + Math.sin(angle - 0.3) * this.radius * 0.8
+                    );
+                    
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // Mostrar disponibilidade do pulso de escudo se tiver o upgrade
+                if (gameUpgrades.find(upgrade => upgrade.id === 'shield_pulse').owned && gameActive) {
+                    const currentTime = Date.now();
+                    const cooldownRemaining = Math.max(0, shieldPulseCooldown - (currentTime - lastShieldPulse));
+                    const isReady = cooldownRemaining === 0;
+                    
+                    if (isReady) {
+                        // Indicador de escudo disponível
+                        ctx.strokeStyle = 'rgba(66, 245, 230, 0.7)';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 3]);
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius + 15, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else {
+                        // Mostrar progresso do cooldown
+                        const progress = 1 - (cooldownRemaining / shieldPulseCooldown);
+                        ctx.strokeStyle = 'rgba(100, 100, 255, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.radius + 15, 0, Math.PI * 2 * progress);
+                        ctx.stroke();
+                    }
+                }
+            };
+            
+            this.makeInvulnerable = function() {
+                this.isInvulnerable = true;
+                this.invulnerableTime = 0;
+            };
+            
+            this.attractCoins = function() {
+                const magnetRadius = 100; // Raio de atração
+                
+                for (const entity of entities) {
+                    if (entity.type === 'coin') {
+                        const dx = this.x - entity.x;
+                        const dy = this.y - entity.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < magnetRadius) {
+                            // Mover moeda em direção ao jogador
+                            const attractionStrength = 0.02;
+                            entity.x += dx * attractionStrength;
+                            entity.y += dy * attractionStrength;
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Classe de obstáculo
+        function Obstacle() {
+            this.x = 0;
+            this.y = 0;
+            this.radius = 15 + Math.random() * 10;
+            this.color = '#ff5555';
+            this.type = 'obstacle';
+            this.angle = Math.random() * Math.PI * 2;
+            this.distance = Math.max(canvas.width, canvas.height) * 0.7;
+            
+            // Aplicar o fator de desaceleração dos powerups permanentes
+            const slowdownFactor = permanentPowerups.find(p => p.id === 'slow_obstacles').level * 0.05;
+            this.speed = (0.5 + Math.random() * 0.5 + (gameState.level * 0.1)) * (1 - slowdownFactor);
+            
+            this.rotation = 0;
+            this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+            this.points = Math.floor(5 + Math.random() * 3);
+            this.vertices = [];
+            
+            // Gerar forma aleatória para o asteroide
+            for (let i = 0; i < this.points; i++) {
+                const angle = (i / this.points) * Math.PI * 2;
+                const variance = 0.7 + Math.random() * 0.6;
+                this.vertices.push({
+                    angle: angle,
+                    distance: this.radius * variance
+                });
+            }
+            
+            // Inicializar posição
+            this.x = center.x + Math.cos(this.angle) * this.distance;
+            this.y = center.y + Math.sin(this.angle) * this.distance;
+            
+            this.update = function(deltaTime) {
+                // Mover em direção ao centro
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                }
+                
+                this.rotation += this.rotationSpeed;
+            };
+            
+            this.render = function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                
+                for (let i = 0; i < this.vertices.length; i++) {
+                    const x = Math.cos(this.vertices[i].angle) * this.vertices[i].distance;
+                    const y = Math.sin(this.vertices[i].angle) * this.vertices[i].distance;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.closePath();
+                ctx.fill();
+                
+                // Adicionar detalhes
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                ctx.restore();
+            };
+            
+            this.checkCollision = function(player) {
+                if (player.isInvulnerable) return false;
+                
+                const dx = this.x - player.x;
+                const dy = this.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < (this.radius + player.radius) * 0.8;
+            };
+            
+            this.checkCenterReached = function() {
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < 20;
+            };
+        }
+        
+        // Classe de power-up
+        function PowerUp() {
+            this.x = 0;
+            this.y = 0;
+            this.radius = 10;
+            this.type = 'powerUp';
+            this.angle = Math.random() * Math.PI * 2;
+            this.distance = Math.max(canvas.width, canvas.height) * 0.7;
+            this.speed = 0.4 + Math.random() * 0.3;
+            this.pulsate = 0;
+            
+            // Tipo de power-up
+            const rand = Math.random();
+            if (rand < 0.3) {
+                this.powerType = 'extraLife';
+                this.color = '#ff44ff';
+            } else if (rand < 0.6) {
+                this.powerType = 'shield';
+                this.color = '#44ffff';
+            } else if (rand < 0.8) {
+                this.powerType = 'coin';
+                this.color = '#ffdd44';
+            } else {
+                this.powerType = 'time';
+                this.color = '#44aaff';
+            }
+            
+            // Inicializar posição
+            this.x = center.x + Math.cos(this.angle) * this.distance;
+            this.y = center.y + Math.sin(this.angle) * this.distance;
+            
+            this.update = function(deltaTime) {
+                // Mover em direção ao centro
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                }
+                
+                this.pulsate += 0.1;
+            };
+            
+            this.render = function() {
+                const pulseSize = Math.sin(this.pulsate) * 2;
+                
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                
+                if (this.powerType === 'extraLife') {
+                    // Desenhar um coração
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -this.radius / 2);
+                    ctx.bezierCurveTo(
+                        this.radius / 2, -this.radius,
+                        this.radius, -this.radius / 4,
+                        0, this.radius / 2
+                    );
+                    ctx.bezierCurveTo(
+                        -this.radius, -this.radius / 4,
+                        -this.radius / 2, -this.radius,
+                        0, -this.radius / 2
+                    );
+                    ctx.fill();
+                    ctx.restore();
+                } else {
+                    // Desenhar um círculo
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + pulseSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Efeito de brilho
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 1.5 + pulseSize, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            };
+            
+            this.checkCollision = function(player) {
+                const dx = this.x - player.x;
+                const dy = this.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < (this.radius + player.radius) * 1.2;
+            };
+            
+            this.checkCenterReached = function() {
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < 20;
+            };
+        }
+        
+        // Classe de moeda
+        function Coin() {
+            this.x = 0;
+            this.y = 0;
+            this.radius = 8;
+            this.color = '#ffdd44';
+            this.type = 'coin';
+            this.angle = Math.random() * Math.PI * 2;
+            this.distance = Math.max(canvas.width, canvas.height) * 0.7;
+            this.speed = 0.6 + Math.random() * 0.3;
+            this.rotation = 0;
+            this.rotationSpeed = 0.05;
+            
+            // Valor aleatório
+            this.value = Math.random() < 0.7 ? 5 : 10;
+            
+            // Aplicar multiplicador de moedas
+            const coinBonus = permanentPowerups.find(p => p.id === 'coin_value').level * 0.15;
+            this.value = Math.round(this.value * (1 + coinBonus));
+            
+            // Chance de moeda especial
+            if (Math.random() < 0.05) {
+                this.value = 15 + Math.floor(Math.random() * 3) * 5; // 15, 20 ou 25
+                this.radius = 10;
+                
+                // Aplicar multiplicador de moedas para as especiais também
+                this.value = Math.round(this.value * (1 + coinBonus));
+            }
+            
+            // Inicializar posição
+            this.x = center.x + Math.cos(this.angle) * this.distance;
+            this.y = center.y + Math.sin(this.angle) * this.distance;
+            
+            this.update = function(deltaTime) {
+                // Mover em direção ao centro
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                }
+                
+                this.rotation += this.rotationSpeed;
+            };
+            
+            this.render = function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                // Desenhar moeda
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Desenhar símbolo $
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$', 0, 0);
+                
+                ctx.restore();
+            };
+            
+            this.checkCollision = function(player) {
+                // Aplicar bônus de raio de coleta se tiver o powerup
+                const magnetBonus = permanentPowerups.find(p => p.id === 'coin_magnet').level * 0.2;
+                const collectRadius = (this.radius + player.radius) * (1.2 + magnetBonus);
+                
+                const dx = this.x - player.x;
+                const dy = this.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < collectRadius;
+            };
+            
+            this.checkCenterReached = function() {
+                const dx = center.x - this.x;
+                const dy = center.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                return distance < 20;
+            };
+        }
+        
+        // Função para criar partículas
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const particle = {
+                    x: x,
+                    y: y,
+                    size: Math.random() * 5 + 2,
+                    speedX: (Math.random() - 0.5) * 3,
+                    speedY: (Math.random() - 0.5) * 3,
+                    color: color,
+                    life: 100
+                };
+                
+                particles.push(particle);
+            }
+        }
+        
+        // Array de partículas
+        let particles = [];
+        
+        // Função para atualizar partículas
+        function updateParticles(deltaTime) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.speedY += 0.01;
+                p.life -= 3;
+                p.size = Math.max(0, p.size - 0.05);
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+        
+        // Função para renderizar partículas
+        function renderParticles() {
+            for (const p of particles) {
+                ctx.globalAlpha = p.life / 100;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // Função para obter a cor do jogador com base na skin selecionada
+        function getPlayerColor() {
+            const skin = playerSkins.find(skin => skin.id === gameState.selectedSkin);
+            return skin ? skin.color : '#4444ff';
+        }
+        
+        // Função para converter hex para rgba
+        function hexToRgba(hex, alpha) {
+            hex = hex.replace(/^#/, '');
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+        
+        // Função para recalcular a posição do jogador
+        function recalculatePlayerPosition() {
+            if (!player) return;
+            
+            player.x = center.x + Math.cos(gameState.orbitAngle) * gameState.orbitRadius;
+            player.y = center.y + Math.sin(gameState.orbitAngle) * gameState.orbitRadius;
+        }
+        
+        // Função para renderizar círculo da órbita
+        function renderOrbit() {
+            // Selecionar o efeito de órbita
+            const orbitEffect = orbitEffects.find(effect => effect.id === gameState.selectedOrbitEffect);
+            
+            if (orbitEffect.id === 'rainbow') {
+                // Efeito arco-íris
+                const gradient = ctx.createLinearGradient(
+                    center.x - gameState.orbitRadius, center.y,
+                    center.x + gameState.orbitRadius, center.y
+                );
+                gradient.addColorStop(0, 'red');
+                gradient.addColorStop(0.2, 'orange');
+                gradient.addColorStop(0.4, 'yellow');
+                gradient.addColorStop(0.6, 'green');
+                gradient.addColorStop(0.8, 'blue');
+                gradient.addColorStop(1, 'violet');
+                ctx.strokeStyle = gradient;
+            } else if (orbitEffect.id === 'fire') {
+                // Efeito de fogo
+                const time = Date.now() * 0.001;
+                ctx.strokeStyle = `rgba(255, ${100 + Math.sin(time * 5) * 50}, 0, 0.5)`;
+            } else if (orbitEffect.id === 'electric') {
+                // Efeito elétrico
+                const time = Date.now() * 0.001;
+                ctx.strokeStyle = `rgba(100, 150, 255, ${0.5 + Math.sin(time * 10) * 0.3})`;
+            } else if (orbitEffect.id === 'neon') {
+                // Efeito neon
+                ctx.strokeStyle = orbitEffect.color;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = orbitEffect.color;
+            } else {
+                // Efeito padrão
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            }
+            
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, gameState.orbitRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Resetar sombra
+            ctx.shadowBlur = 0;
+            
+            // Efeito de boost na órbita
+            if (gameState.orbitSpeedBoost > 1) {
+                ctx.strokeStyle = `rgba(255, 100, 100, ${0.3 + Math.sin(Date.now() * 0.01) * 0.2})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, gameState.orbitRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            // Efeito de parada na órbita
+            if (gameState.isOrbitalStopped) {
+                ctx.strokeStyle = `rgba(255, 220, 100, ${0.3 + Math.sin(Date.now() * 0.008) * 0.2})`;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, gameState.orbitRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Função para iniciar o jogo
+        function startGame() {
+            // Resetar estado
+            gameState.score = 0;
+            gameState.lives = 3 + permanentPowerups.find(p => p.id === 'extra_life').level;
+            gameState.level = 1;
+            gameState.orbitAngle = 0;
+            gameState.orbitSpeedBoost = 1;
+            gameState.isOrbitalStopped = false;
+            gameState.obstacleSpawnRate = 2000;
+            
+            // Esconder telas
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
+            
+            // Mostrar instruções brevemente
+            document.getElementById('instructions-panel').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('instructions-panel').style.display = 'none';
+            }, 5000);
+            
+            // Atualizar UI
+            updateLivesDisplay();
+            updateScoreDisplay();
+            updateCoinsDisplay();
+            updateOrbitStatus();
+            
+            // Limpar entidades e partículas
+            entities = [];
+            particles = [];
+            
+            // Criar jogador
+            player = new Player();
+            recalculatePlayerPosition();
+            
+            // Iniciar loop
+            gameActive = true;
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Função para terminar o jogo
+        function endGame() {
+            gameActive = false;
+            
+            // Atualizar melhor pontuação
+            if (gameState.score > gameState.bestScore) {
+                gameState.bestScore = gameState.score;
+            }
+            
+            // Mostrar tela de game over
+            document.getElementById('game-over-screen').style.display = 'flex';
+            document.getElementById('final-score').textContent = `Pontuação: ${gameState.score}`;
+            document.getElementById('final-coins').textContent = `Moedas: ${gameState.coins}`;
+            document.getElementById('name-input').focus();
+        }
+        
+        // Função de loop principal
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // Limpar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Atualizar estado da órbita
+            if (gameState.orbitSpeedBoost > 1) {
+                gameState.orbitBoostTime += deltaTime;
+                if (gameState.orbitBoostTime >= gameState.orbitBoostDuration) {
+                    gameState.orbitSpeedBoost = 1;
+                    gameState.orbitBoostTime = 0;
+                    updateOrbitStatus();
+                }
+            }
+            
+            // Atualizar ângulo da órbita
+            if (!gameState.isOrbitalStopped) {
+                if (gameState.mouseControl && gameState.targetAngle !== undefined) {
+                    // Controle suave com o mouse quando ativado
+                    const angleDiff = gameState.targetAngle - gameState.orbitAngle;
+                    
+                    // Normalizar a diferença para o caminho mais curto
+                    let normalizedDiff = angleDiff;
+                    while (normalizedDiff > Math.PI) normalizedDiff -= Math.PI * 2;
+                    while (normalizedDiff < -Math.PI) normalizedDiff += Math.PI * 2;
+                    
+                    // Mover suavemente para o ângulo alvo
+                    if (Math.abs(normalizedDiff) > 0.01) {
+                        gameState.orbitAngle += normalizedDiff * 0.1;
+                    }
+                } else {
+                    // Movimento automático na direção configurada
+                    gameState.orbitAngle += gameState.orbitDirection * gameState.orbitSpeed * gameState.orbitSpeedBoost;
+                }
+            }
+            
+            // Recalcular posição do jogador
+            recalculatePlayerPosition();
+            
+            // Desenhar fundo
+            renderBackground();
+            
+            // Desenhar órbita
+            renderOrbit();
+            
+            // Atualizar jogador
+            player.update(deltaTime);
+            player.render();
+            
+            // Spawnar entidades
+            gameState.lastObstacleSpawn += deltaTime;
+            if (gameState.lastObstacleSpawn > gameState.obstacleSpawnRate) {
+                entities.push(new Obstacle());
+                gameState.lastObstacleSpawn = 0;
+            }
+            
+            gameState.lastPowerUpSpawn += deltaTime;
+            if (gameState.lastPowerUpSpawn > gameState.powerUpSpawnRate) {
+                entities.push(new PowerUp());
+                gameState.lastPowerUpSpawn = 0;
+            }
+            
+            gameState.lastCoinSpawn += deltaTime;
+            if (gameState.lastCoinSpawn > gameState.coinSpawnRate) {
+                entities.push(new Coin());
+                gameState.lastCoinSpawn = 0;
+            }
+            
+            // Atualizar e renderizar entidades
+            for (let i = entities.length - 1; i >= 0; i--) {
+                const entity = entities[i];
+                entity.update(deltaTime);
+                entity.render();
+                
+                // Verificar colisão com o jogador
+                if (entity.checkCollision(player)) {
+                    if (entity.type === 'obstacle') {
+                        // Perder vida
+                        gameState.lives--;
+                        updateLivesDisplay();
+                        
+                        // Efeito de partículas
+                        createParticles(player.x, player.y, 20, player.color);
+                        
+                        // Remover obstáculo
+                        entities.splice(i, 1);
+                        
+                        // Tornar jogador invulnerável
+                        player.makeInvulnerable();
+                        
+                        // Verificar game over
+                        if (gameState.lives <= 0) {
+                            endGame();
+                            return;
+                        }
+                    } else if (entity.type === 'powerUp') {
+                        // Aplicar power-up
+                        if (entity.powerType === 'extraLife' && gameState.lives < 5) {
+                            gameState.lives++;
+                            updateLivesDisplay();
+                            createPopupMessage(player.x, player.y, "+1 VIDA!", "#ff44ff");
+                        } else if (entity.powerType === 'shield') {
+                            player.makeInvulnerable();
+                            createPopupMessage(player.x, player.y, "ESCUDO!", "#44ffff");
+                        } else if (entity.powerType === 'coin') {
+                            // Aplicar bônus do multiplicador de moedas
+                            const coinBonus = permanentPowerups.find(p => p.id === 'coin_value').level * 0.15;
+                            const baseBonus = 20;
+                            const bonusCoins = Math.round(baseBonus * (1 + coinBonus));
+                            
+                            gameState.coins += bonusCoins;
+                            gameState.totalCoinsCollected += bonusCoins;
+                            updateCoinsDisplay();
+                            createPopupMessage(player.x, player.y, `+${bonusCoins} MOEDAS!`, "#ffdd44");
+                        } else if (entity.powerType === 'time') {
+                            // Desacelerar obstáculos
+                            for (const e of entities) {
+                                if (e.type === 'obstacle') {
+                                    e.speed *= 0.5;
+                                }
+                            }
+                            createPopupMessage(player.x, player.y, "TEMPO LENTO!", "#44aaff");
+                        }
+                        
+                        // Adicionar pontos
+                        gameState.score += 25;
+                        updateScoreDisplay();
+                        
+                        // Efeito de partículas
+                        createParticles(entity.x, entity.y, 20, entity.color);
+                        
+                        // Remover power-up
+                        entities.splice(i, 1);
+                    } else if (entity.type === 'coin') {
+                        // Adicionar valor da moeda
+                        gameState.coins += entity.value;
+                        gameState.totalCoinsCollected += entity.value;
+                        updateCoinsDisplay();
+                        
+                        // Adicionar pontos com multiplicador
+                        const scoreBonus = permanentPowerups.find(p => p.id === 'score_boost').level * 0.1;
+                        const basePoints = 5;
+                        const bonusPoints = Math.round(basePoints * (1 + scoreBonus));
+                        
+                        gameState.score += bonusPoints;
+                        updateScoreDisplay();
+                        
+                        // Mostrar popup
+                        createPopupMessage(entity.x, entity.y, `+${entity.value}`, "#ffdd44");
+                        
+                        // Efeito de partículas
+                        createParticles(entity.x, entity.y, 15, entity.color);
+                        
+                        // Remover moeda
+                        entities.splice(i, 1);
+                    }
+                    continue;
+                }
+                
+                // Verificar se chegou ao centro
+                if (entity.checkCenterReached()) {
+                    if (entity.type === 'obstacle') {
+                        // Adicionar pontos com multiplicador
+                        const scoreBonus = permanentPowerups.find(p => p.id === 'score_boost').level * 0.1;
+                        const basePoints = 10;
+                        const bonusPoints = Math.round(basePoints * (1 + scoreBonus));
+                        
+                        gameState.score += bonusPoints;
+                        updateScoreDisplay();
+                        
+                        // Efeito de partículas
+                        createParticles(entity.x, entity.y, 15, entity.color);
+                    }
+                    
+                    // Remover entidade
+                    entities.splice(i, 1);
+                }
+            }
+            
+            // Atualizar e renderizar partículas
+            updateParticles(deltaTime);
+            renderParticles();
+            
+            // Continuar o loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Função para renderizar o fundo
+        function renderBackground() {
+            // Desenhar algumas estrelas
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const size = Math.random() * 2;
+                const brightness = Math.random() * 100 + 155;
+                
+                ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Criar gradiente radial
+            const gradient = ctx.createRadialGradient(
+                center.x, center.y, 0,
+                center.x, center.y, canvas.width * 0.4
+            );
+            gradient.addColorStop(0, 'rgba(20, 20, 50, 0.5)');
+            gradient.addColorStop(1, 'rgba(5, 5, 15, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, canvas.width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Função para criar mensagem popup
+        function createPopupMessage(x, y, text, color) {
+            const popup = document.createElement('div');
+            popup.style.position = 'absolute';
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+            popup.style.color = color;
+            popup.style.fontSize = '18px';
+            popup.style.fontWeight = 'bold';
+            popup.style.pointerEvents = 'none';
+            popup.style.textShadow = '0 0 3px black';
+            popup.textContent = text;
+            
+            // Adicionar ao DOM
+            document.getElementById('game-container').appendChild(popup);
+            
+            // Animar
+            let opacity = 1;
+            let yOffset = 0;
+            
+            const animate = () => {
+                opacity -= 0.02;
+                yOffset -= 1;
+                
+                popup.style.opacity = opacity;
+                popup.style.transform = `translateY(${yOffset}px)`;
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    popup.remove();
+                }
+            };
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Funções de UI
+        function updateScoreDisplay() {
+            document.getElementById('score-value').textContent = gameState.score;
+            
+            // Verificar subida de nível
+            const newLevel = Math.floor(gameState.score / 500) + 1;
+            if (newLevel > gameState.level) {
+                levelUp(newLevel);
+            }
+        }
+        
+        function updateCoinsDisplay() {
+            document.getElementById('coins-value').textContent = gameState.coins;
+            document.getElementById('shop-coins').textContent = gameState.coins;
+        }
+        
+        function updateLivesDisplay() {
+            document.getElementById('lives-value').textContent = '❤️'.repeat(gameState.lives);
+        }
+        
+        function updateOrbitStatus() {
+            const statusPanel = document.getElementById('orbit-status');
+            
+            if (gameState.isOrbitalStopped) {
+                statusPanel.textContent = "ÓRBITA PARADA";
+                statusPanel.style.color = "#ffdd44";
+            } else if (gameState.orbitSpeedBoost > 1) {
+                statusPanel.textContent = "ÓRBITA ACELERADA";
+                statusPanel.style.color = "#ff5555";
+            } else {
+                if (gameState.mouseControl) {
+                    statusPanel.textContent = "CONTROLE POR MOUSE ATIVADO";
+                    statusPanel.style.color = "#22ccff";
+                } else {
+                    statusPanel.textContent = "Use os botões ⏱️ e ⚡ para controlar sua órbita";
+                    statusPanel.style.color = "white";
+                }
+            }
+            
+            // Adicionar indicador de direção
+            if (!gameState.isOrbitalStopped && !gameState.mouseControl) {
+                const directionText = gameState.orbitDirection === 1 ? " (HORÁRIO)" : " (ANTI-HORÁRIO)";
+                statusPanel.textContent += directionText;
+            }
+            
+            // Mostrar se o pulso de escudo está disponível
+            if (gameUpgrades.find(upgrade => upgrade.id === 'shield_pulse').owned) {
+                const currentTime = Date.now();
+                const cooldownRemaining = Math.max(0, shieldPulseCooldown - (currentTime - lastShieldPulse));
+                
+                if (cooldownRemaining === 0) {
+                    statusPanel.textContent += " • ESCUDO PRONTO (L)";
+                }
+            }
+        }
+        
+        function levelUp(newLevel) {
+            gameState.level = newLevel;
+            
+            // Mostrar mensagem
+            const levelUpDisplay = document.getElementById('level-up');
+            levelUpDisplay.textContent = `NÍVEL ${newLevel}!`;
+            levelUpDisplay.style.display = 'block';
+            
+            setTimeout(() => {
+                levelUpDisplay.style.display = 'none';
+            }, 2000);
+            
+            // Aumentar dificuldade
+            gameState.obstacleSpawnRate = Math.max(500, 2000 - (newLevel * 200));
+            gameState.orbitSpeed += 0.01;
+            
+            // Recompensa por nível
+            const levelReward = newLevel * 25;
+            gameState.coins += levelReward;
+            gameState.totalCoinsCollected += levelReward;
+            updateCoinsDisplay();
+            
+            // Popup
+            createPopupMessage(center.x, center.y, `NÍVEL ${newLevel}! +${levelReward} MOEDAS`, "#ffdd44");
+        }
+        
+        // Controles de órbita
+        function toggleOrbitalStop() {
+            gameState.isOrbitalStopped = !gameState.isOrbitalStopped;
+            updateOrbitStatus();
+        }
+        
+        function activateSpeedBoost() {
+            gameState.orbitSpeedBoost = 2.5;
+            gameState.orbitBoostTime = 0;
+            updateOrbitStatus();
+        }
+        
+        // Função para ativar o pulso de escudo
+        function activateShieldPulse() {
+            if (!gameActive) return;
+            if (!gameUpgrades.find(upgrade => upgrade.id === 'shield_pulse').owned) return;
+            
+            const currentTime = Date.now();
+            const cooldownRemaining = Math.max(0, shieldPulseCooldown - (currentTime - lastShieldPulse));
+            
+            if (cooldownRemaining === 0) {
+                // Ativar escudo
+                player.makeInvulnerable();
+                lastShieldPulse = currentTime;
+                
+                // Efeito visual
+                createParticles(player.x, player.y, 30, '#44ffff');
+                createPopupMessage(player.x, player.y, "ESCUDO ATIVADO!", "#44ffff");
+                
+                // Atualizar status
+                updateOrbitStatus();
+            }
+        }
+        
+        // Função para calcular o ângulo a partir da posição do mouse
+        function calculateMouseAngle(mouseX, mouseY) {
+            const dx = mouseX - center.x;
+            const dy = mouseY - center.y;
+            return Math.atan2(dy, dx);
+        }
+        
+        // Funções da loja
+        function showShop() {
+            document.getElementById('shop-panel').style.display = 'block';
+            updateShopItems();
+        }
+        
+        function hideShop() {
+            document.getElementById('shop-panel').style.display = 'none';
+        }
+        
+        function updateShopItems() {
+            const shopItemsContainer = document.getElementById('shop-items');
+            shopItemsContainer.innerHTML = '';
+            
+            // SEÇÃO DE SKINS DE NAVE
+            const skinsTitle = document.createElement('h3');
+            skinsTitle.textContent = 'Skins de Nave';
+            skinsTitle.className = 'shop-category';
+            shopItemsContainer.appendChild(skinsTitle);
+            
+            // Adicionar skins
+            playerSkins.forEach(skin => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                
+                const preview = document.createElement('div');
+                preview.className = 'item-preview';
+                preview.style.backgroundColor = skin.color;
+                
+                const info = document.createElement('div');
+                info.innerHTML = `<strong>${skin.name}</strong><br>Preço: ${skin.price} moedas`;
+                
+                const button = document.createElement('button');
+                
+                if (skin.owned || gameState.ownedSkins.includes(skin.id)) {
+                    if (skin.id === gameState.selectedSkin) {
+                        button.textContent = 'Equipado';
+                        button.disabled = true;
+                    } else {
+                        button.textContent = 'Equipar';
+                        button.onclick = () => {
+                            gameState.selectedSkin = skin.id;
+                            if (player) player.color = skin.color;
+                            updateShopItems();
+                        };
+                    }
+                } else {
+                    button.textContent = 'Comprar';
+                    button.onclick = () => {
+                        if (gameState.coins >= skin.price) {
+                            gameState.coins -= skin.price;
+                            skin.owned = true;
+                            gameState.ownedSkins.push(skin.id);
+                            gameState.selectedSkin = skin.id;
+                            if (player) player.color = skin.color;
+                            updateCoinsDisplay();
+                            updateShopItems();
+                        } else {
+                            alert('Moedas insuficientes!');
+                        }
+                    };
+                }
+                
+                itemDiv.appendChild(preview);
+                itemDiv.appendChild(info);
+                itemDiv.appendChild(button);
+                
+                shopItemsContainer.appendChild(itemDiv);
+            });
+            
+            // SEÇÃO DE EFEITOS DE ÓRBITA
+            const effectsTitle = document.createElement('h3');
+            effectsTitle.textContent = 'Efeitos de Órbita';
+            effectsTitle.className = 'shop-category';
+            shopItemsContainer.appendChild(effectsTitle);
+            
+            // Adicionar efeitos de órbita
+            orbitEffects.forEach(effect => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                
+                const preview = document.createElement('div');
+                preview.className = 'orbit-effect-preview';
+                
+                // Estilizar preview do efeito
+                if (effect.id === 'rainbow') {
+                    preview.style.background = 'linear-gradient(to right, red, orange, yellow, green, blue, violet)';
+                } else if (effect.id === 'fire') {
+                    preview.style.background = 'linear-gradient(to right, #ff4400, #ffaa00)';
+                } else if (effect.id === 'electric') {
+                    preview.style.background = 'linear-gradient(to right, #4455ff, #88ddff)';
+                } else if (effect.id === 'neon') {
+                    preview.style.background = effect.color;
+                    preview.style.boxShadow = `0 0 10px ${effect.color}`;
+                } else {
+                    preview.style.background = 'linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0.5))';
+                }
+                
+                const info = document.createElement('div');
+                info.innerHTML = `<strong>${effect.name}</strong><br>${effect.desc}<br>Preço: ${effect.price} moedas`;
+                
+                const button = document.createElement('button');
+                
+                if (effect.owned || gameState.ownedOrbitEffects.includes(effect.id)) {
+                    if (effect.id === gameState.selectedOrbitEffect) {
+                        button.textContent = 'Equipado';
+                        button.disabled = true;
+                    } else {
+                        button.textContent = 'Equipar';
+                        button.onclick = () => {
+                            gameState.selectedOrbitEffect = effect.id;
+                            updateShopItems();
+                        };
+                    }
+                } else {
+                    button.textContent = 'Comprar';
+                    button.onclick = () => {
+                        if (gameState.coins >= effect.price) {
+                            gameState.coins -= effect.price;
+                            effect.owned = true;
+                            gameState.ownedOrbitEffects.push(effect.id);
+                            gameState.selectedOrbitEffect = effect.id;
+                            updateCoinsDisplay();
+                            updateShopItems();
+                        } else {
+                            alert('Moedas insuficientes!');
+                        }
+                    };
+                }
+                
+                itemDiv.appendChild(preview);
+                itemDiv.appendChild(info);
+                itemDiv.appendChild(button);
+                
+                shopItemsContainer.appendChild(itemDiv);
+            });
+            
+            // SEÇÃO DE POWERUPS PERMANENTES
+            const powerupsTitle = document.createElement('h3');
+            powerupsTitle.textContent = 'Powerups Permanentes';
+            powerupsTitle.className = 'shop-category';
+            shopItemsContainer.appendChild(powerupsTitle);
+            
+            // Adicionar powerups permanentes
+            permanentPowerups.forEach(powerup => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                
+                const info = document.createElement('div');
+                const level = powerup.level;
+                const maxLevel = powerup.maxLevel;
+                
+                let levelStars = '★'.repeat(level) + '☆'.repeat(maxLevel - level);
+                if (level === 0) levelStars = '☆'.repeat(maxLevel);
+                
+                let description = powerup.desc;
+                
+                info.innerHTML = `<strong>${powerup.name}</strong> <span style="color:#ffcc22">${levelStars}</span>
+                                  <br>${description}
+                                  <br>Preço: ${powerup.price * (level + 1)} moedas`;
+                
+                // Dica sobre o que isso melhora
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.innerHTML = '?<span class="tooltiptext">' + getBonusDescription(powerup) + '</span>';
+                info.appendChild(tooltip);
+                
+                const button = document.createElement('button');
+                
+                if (level >= maxLevel) {
+                    button.textContent = 'MÁXIMO';
+                    button.disabled = true;
+                } else {
+                    const nextPrice = powerup.price * (level + 1);
+                    button.textContent = level === 0 ? 'Comprar' : 'Melhorar';
+                    button.onclick = () => {
+                        if (gameState.coins >= nextPrice) {
+                            gameState.coins -= nextPrice;
+                            powerup.level += 1;
+                            
+                            // Adicionar à lista de upgrades possuídos
+                            if (!gameState.ownedPowerups.includes(powerup.id)) {
+                                gameState.ownedPowerups.push(powerup.id);
+                            }
+                            
+                            updateCoinsDisplay();
+                            updateShopItems();
+                            
+                            // Atualizar os valores de bônus
+                            updatePowerupBonuses();
+                        } else {
+                            alert('Moedas insuficientes!');
+                        }
+                    };
+                }
+                
+                itemDiv.appendChild(info);
+                itemDiv.appendChild(button);
+                
+                shopItemsContainer.appendChild(itemDiv);
+            });
+            
+            // SEÇÃO DE UPGRADES
+            const upgradesTitle = document.createElement('h3');
+            upgradesTitle.textContent = 'Upgrades Especiais';
+            upgradesTitle.className = 'shop-category';
+            shopItemsContainer.appendChild(upgradesTitle);
+            
+            // Adicionar upgrades especiais
+            gameUpgrades.forEach(upgrade => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'shop-item';
+                itemDiv.style.display = 'flex';
+                itemDiv.style.justifyContent = 'space-between';
+                itemDiv.style.alignItems = 'center';
+                
+                // Informações do upgrade
+                const info = document.createElement('div');
+                info.style.flex = '1';
+                info.innerHTML = `<strong>${upgrade.name}</strong><br>${upgrade.desc}<br>Preço: ${upgrade.price} moedas`;
+                
+                // Botão de ação
+                const button = document.createElement('button');
+                
+                if (upgrade.owned || gameState.ownedUpgrades.includes(upgrade.id)) {
+                    // Para controle de mouse
+                    if (upgrade.id === 'mouse_control') {
+                        button.textContent = gameState.mouseControl ? 'Desativar' : 'Ativar';
+                        button.onclick = () => {
+                            gameState.mouseControl = !gameState.mouseControl;
+                            updateOrbitStatus();
+                            updateShopItems();
+                        };
+                    }
+                    // Para inversão de órbita
+                    else if (upgrade.id === 'reverse_orbit') {
+                        button.textContent = gameState.orbitDirection === -1 ? 'Normal' : 'Inverter';
+                        button.onclick = () => {
+                            gameState.orbitDirection *= -1; // Inverte a direção: 1 -> -1 ou -1 -> 1
+                            updateOrbitStatus();
+                            updateShopItems();
+                        };
+                    }
+                    // Para outros upgrades, apenas mostra "Ativado"
+                    else {
+                        button.textContent = 'Ativado';
+                        button.disabled = true;
+                    }
+                    
+                    if (!gameState.ownedUpgrades.includes(upgrade.id)) {
+                        gameState.ownedUpgrades.push(upgrade.id);
+                    }
+                } else {
+                    button.textContent = 'Comprar';
+                    button.onclick = () => {
+                        if (gameState.coins >= upgrade.price) {
+                            gameState.coins -= upgrade.price;
+                            upgrade.owned = true;
+                            gameState.ownedUpgrades.push(upgrade.id);
+                            
+                            // Ativar funcionalidade de acordo com o upgrade
+                            if (upgrade.id === 'mouse_control') {
+                                gameState.mouseControl = true;
+                            } else if (upgrade.id === 'reverse_orbit') {
+                                gameState.orbitDirection = -1; // Começa invertido após comprar
+                            }
+                            
+                            updateCoinsDisplay();
+                            updateOrbitStatus();
+                            updateShopItems();
+                            
+                            // Mensagem de confirmação
+                            createPopupMessage(center.x, center.y, `${upgrade.name} Adquirido!`, "#44ff44");
+                        } else {
+                            alert('Moedas insuficientes!');
+                        }
+                    };
+                }
+                
+                itemDiv.appendChild(info);
+                itemDiv.appendChild(button);
+                
+                shopItemsContainer.appendChild(itemDiv);
+            });
+        }
+        
+        // Função para gerar descrições dos bônus dos powerups
+        function getBonusDescription(powerup) {
+            const currentLevel = powerup.level;
+            const nextLevel = currentLevel + 1;
+            
+            switch(powerup.id) {
+                case 'extra_life':
+                    return `Nível ${currentLevel}: +${currentLevel} vida inicial<br>
+                           Nível ${nextLevel}: +${nextLevel} vidas iniciais`;
+                
+                case 'coin_magnet':
+                    return `Nível ${currentLevel}: +${currentLevel * 20}% raio de coleta<br>
+                           Nível ${nextLevel}: +${nextLevel * 20}% raio de coleta`;
+                
+                case 'score_boost':
+                    return `Nível ${currentLevel}: +${currentLevel * 10}% pontos<br>
+                           Nível ${nextLevel}: +${nextLevel * 10}% pontos`;
+                
+                case 'slow_obstacles':
+                    return `Nível ${currentLevel}: -${currentLevel * 5}% velocidade<br>
+                           Nível ${nextLevel}: -${nextLevel * 5}% velocidade`;
+                
+                case 'coin_value':
+                    return `Nível ${currentLevel}: +${currentLevel * 15}% valor<br>
+                           Nível ${nextLevel}: +${nextLevel * 15}% valor`;
+                
+                default:
+                    return 'Informação não disponível';
+            }
+        }
+        
+        // Função para atualizar os bônus dos powerups
+        function updatePowerupBonuses() {
+            gameState.startingLives = 3 + permanentPowerups.find(p => p.id === 'extra_life').level;
+            // Outros bônus são calculados dinamicamente quando necessário
+        }
+        
+        // Funções do leaderboard
+        function showLeaderboard() {
+            document.getElementById('leaderboard-panel').style.display = 'block';
+            updateLeaderboardUI();
+        }
+        
+        function hideLeaderboard() {
+            document.getElementById('leaderboard-panel').style.display = 'none';
+        }
+        
+        function updateLeaderboardUI() {
+            const leaderboardList = document.getElementById('leaderboard-list');
+            leaderboardList.innerHTML = '';
+            
+            // Ordenar por pontuação (maior para menor)
+            const sortedScores = [...leaderboard].sort((a, b) => b.score - a.score);
+            
+            // Mostrar entradas do leaderboard
+            sortedScores.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                
+                const rankCell = document.createElement('td');
+                rankCell.textContent = index + 1;
+                
+                const nameCell = document.createElement('td');
+                nameCell.textContent = entry.name || 'Anônimo';
+                
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = entry.score || 0;
+                
+                const coinsCell = document.createElement('td');
+                coinsCell.textContent = entry.coins || 0;
+                
+                row.appendChild(rankCell);
+                row.appendChild(nameCell);
+                row.appendChild(scoreCell);
+                row.appendChild(coinsCell);
+                
+                leaderboardList.appendChild(row);
+            });
+            
+            // Se não houver entradas
+            if (sortedScores.length === 0) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 4;
+                cell.textContent = 'Ainda não há pontuações registradas!';
+                cell.style.textAlign = 'center';
+                row.appendChild(cell);
+                leaderboardList.appendChild(row);
+            }
+        }
+        
+        function submitScore() {
+            const playerName = document.getElementById('name-input').value.trim() || 'Anônimo';
+            
+            // Adicionar ao leaderboard
+            leaderboard.push({
+                name: playerName,
+                score: gameState.score,
+                coins: gameState.coins,
+                date: new Date().toISOString()
+            });
+            
+            // Mostrar mensagem de confirmação
+            createPopupMessage(center.x, center.y, "Pontuação registrada!", "#44ff88");
+            
+            // Mostrar leaderboard
+            showLeaderboard();
+        }
+        
+        // Event Listeners
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            center = {
+                x: canvas.width / 2,
+                y: canvas.height / 2
+            };
+            if (player) recalculatePlayerPosition();
+        });
+        
+        // Botões das telas
+        document.getElementById('start-button').addEventListener('click', startGame);
+        document.getElementById('restart-button').addEventListener('click', startGame);
+        document.getElementById('submit-score-button').addEventListener('click', submitScore);
+        
+        // Controle do mouse
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameActive || !gameState.mouseControl) return;
+            
+            // Calcular ângulo alvo
+            gameState.targetAngle = calculateMouseAngle(e.clientX, e.clientY);
+        });
+        
+        // Controle de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'l' || e.key === 'L') {
+                // Ativar pulso de escudo
+                activateShieldPulse();
+            }
+        });
+        
+        // Botões de controle
+        document.getElementById('stop-button').addEventListener('click', toggleOrbitalStop);
+        document.getElementById('boost-button').addEventListener('click', activateSpeedBoost);
+        
+        // Botões da loja e leaderboard
+        document.getElementById('shop-button').addEventListener('click', showShop);
+        document.getElementById('shop-button-end').addEventListener('click', showShop);
+        document.getElementById('leaderboard-button').addEventListener('click', showLeaderboard);
+        document.getElementById('leaderboard-button-end').addEventListener('click', showLeaderboard);
+        
+        // Botões de fechar painéis
+        document.querySelectorAll('.panel-close').forEach(button => {
+            button.addEventListener('click', () => {
+                document.getElementById('leaderboard-panel').style.display = 'none';
+                document.getElementById('shop-panel').style.display = 'none';
+            });
+        });
+        
+        // Inicialização
+        resizeCanvas();
+        updateCoinsDisplay();
+        updateOrbitStatus();
+        
+        // Inicializar valores de powerups permanentes
+        permanentPowerups.forEach(powerup => {
+            powerup.level = 0;
+        });
+    </script>
+</body>
+</html>
